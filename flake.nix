@@ -52,7 +52,15 @@
 	          installPhase = ''
 		          runHook preInstall
 		          mkdir -p $out/opt
+              mkdir -p $out/bin
 		          cp -r ./ $out/opt/Defold/
+
+              echo "#!/bin/sh" > $out/bin/Defold
+              echo "cd $out/opt/Defold" >> $out/bin/Defold
+              echo 'exec ./Defold "$@"' >> $out/bin/Defold
+              chmod +x $out/bin/Defold
+
+              wrapProgram $out/opt/Defold/Defold --set LD_LIBRARY_PATH "${pkgs.lib.makeLibraryPath runtimeLibs}"
 
               mkdir -p $out/share/applications/
               install -D $desktopSrc/Defold.desktop $out/share/applications/Defold.desktop
