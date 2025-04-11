@@ -23,6 +23,7 @@
 		          url = "https://github.com/defold/defold/releases/download/${version}/Defold-x86_64-linux.tar.gz";
 		          hash = "sha256-KlQd4HzMHAp5HDSzX/3r3gsqbyW8dVBDmcWjewuf3mQ=";
 	          };
+            desktopSrc = ./.;
 
 	          runtimeLibs = with pkgs; [
 		          stdenv.cc.cc
@@ -40,15 +41,29 @@
 	          ]);
 
 	          buildInputs = runtimeLibs;
-	          nativeBuildInputs = with pkgs; [ autoPatchelfHook makeWrapper wrapGAppsHook ];
+	          nativeBuildInputs = with pkgs; [ autoPatchelfHook makeWrapper wrapGAppsHook libarchive ];
+
+            postUnpack = ''
+              pushd source
+              bsdtar -xf packages/defold-f68db9583283029bd2c2425839119f34c253143b.jar --strip-components 2 icons/document.iconset
+              popd
+            '';
 
 	          installPhase = ''
 		          runHook preInstall
 		          mkdir -p $out/opt
-		          mkdir -p $out/bin
 		          cp -r ./ $out/opt/Defold/
-		          wrapProgram $out/opt/Defold/Defold --set LD_LIBRARY_PATH "${pkgs.lib.makeLibraryPath runtimeLibs}"
-		          ln -s $out/opt/Defold/Defold $out/bin
+
+              mkdir -p $out/share/applications/
+              install -D $desktopSrc/Defold.desktop $out/share/applications/Defold.desktop
+              install -Dm644 icon_16x16.png "$out/share/icons/hicolor/16x16/apps/defold.png"
+              install -Dm644 icon_16x16@2x.png "$out/share/icons/hicolor/32x32/apps/defold.png"
+              install -Dm644 icon_32x32@2x.png "$out/share/icons/hicolor/64x64/apps/defold.png"
+              install -Dm644 icon_128x128.png "$out/share/icons/hicolor/128x128/apps/defold.png"
+              install -Dm644 icon_256x256.png "$out/share/icons/hicolor/256x256/apps/defold.png"
+              install -Dm644 icon_256x256@2x.png "$out/share/icons/hicolor/512x512/apps/defold.png"
+
+		          substituteInPlace $out/share/applications/Defold.desktop --replace-fail "outpath" "$out/opt/Defold"
 		          runHook postInstall
 	          '';
 	        };
